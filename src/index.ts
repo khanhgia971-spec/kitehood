@@ -790,8 +790,16 @@ export default {
     if (url.pathname.startsWith('/api') || url.pathname.startsWith('/auth')) {
       return handleApi(request, env);
     }
-    if (env.ASSETS) return env.ASSETS.fetch(request);
+    if (env.ASSETS) {
+      let res = await env.ASSETS.fetch(request);
+      if (res.status === 404) {
+        const indexReq = new Request(new URL('/index.html', url.origin), request);
+        res = await env.ASSETS.fetch(indexReq);
+      }
+      return res;
+    }
     return new Response('ASSETS missing', { status: 500 });
   },
 };
+
 
