@@ -1,0 +1,16 @@
+name = "kitehood-api"
+main = "src/index.ts"
+compatibility_date = "2024-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Bắt buộc: tạo KV rồi dán ID vào đây
+# npx wrangler kv:namespace create KV
+[[kv_namespaces]]
+binding = "KV"
+id = "PASTE_YOUR_KV_ID_HERE"
+
+[vars]
+ENVIRONMENT = "production"
+
+# Secret (chạy 1 lần):
+# npx wrangler secret put JWT_SECRET --config workers/app/wrangler.toml

@@ -1,0 +1,7 @@
+# Cloudflare Pages – build settings
+# Build command: cd apps/web && npm install && npm run build
+# Output directory: apps/web/dist
+# Root directory: / (monorepo root) hoặc apps/web
+
+name = "kitehood"
+compatibility_date = "2024-10-01"

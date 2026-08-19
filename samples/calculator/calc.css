@@ -1,0 +1,6 @@
+body{display:grid;place-items:center;min-height:100vh;margin:0;background:#111;font-family:system-ui}
+.calc{width:280px;background:#1e293b;border-radius:16px;padding:16px;box-shadow:0 10px 40px #0008}
+#display{background:#0f172a;color:#f8fafc;font-size:2rem;padding:12px;border-radius:8px;text-align:right;margin-bottom:12px}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+button{padding:14px;font-size:1.1rem;border:0;border-radius:8px;background:#334155;color:#fff;cursor:pointer}
+button.op{background:#6366f1}button.eq{background:#10b981;grid-column:span 2}

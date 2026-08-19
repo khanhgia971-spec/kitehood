@@ -1,0 +1,22 @@
+# Copy IDs vào wrangler.toml gốc và workers/api/wrangler.toml
+
+name = "kitehood-api"
+main = "workers/api/src/index.ts"
+compatibility_date = "2024-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "online-ide-db"
+database_id = "PASTE_D1_ID_HERE"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "online-ide-files"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "PASTE_KV_ID_HERE"
+
+[vars]
+ENVIRONMENT = "production"

@@ -1,0 +1,7 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+header { padding: 3rem 1.5rem; background: linear-gradient(135deg,#312e81,#0f172a); }
+h1 { margin: 0 0 0.5rem; }
+section { padding: 2rem 1.5rem; max-width: 720px; margin: 0 auto; }
+li { background: #1e293b; margin: 0.5rem 0; padding: 1rem; border-radius: 12px; list-style: none; }
+ul { padding: 0; }

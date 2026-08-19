@@ -1,0 +1,24 @@
+name = "kitehood-api"
+main = "src/index.ts"
+compatibility_date = "2024-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "online-ide-db"
+database_id = "3d8d3226-1cd0-4034-a144-0fa9ec454ae8"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "8b48518269414899a9eb2d1c4713c598"
+preview_id = "ba0de42769f848648b34aea59b586941"
+
+[assets]
+directory = "./public"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+[vars]
+ENVIRONMENT = "production"
+GOOGLE_CLIENT_ID = "469913799005-vi26moai41brfunj75c7nh517372bcmu.apps.googleusercontent.com"
+GITHUB_CLIENT_ID = "Ov23li1vU3yCuooobzOq"

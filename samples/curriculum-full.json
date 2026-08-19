@@ -1,0 +1,341 @@
+{
+  "version": 1,
+  "title": "Lộ trình Full-stack cơ bản",
+  "chapters": [
+    {
+      "id": "ch1",
+      "title": "HTML",
+      "order": 1,
+      "exercises": [
+        {
+          "id": "ex_0_0",
+          "title": "HTML: Thẻ cơ bản",
+          "description": "Hoàn thành bài thực hành về Thẻ cơ bản trong chương HTML. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "html",
+          "starterCode": "// Bài: Thẻ cơ bản\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs HTML · thử trong Preview/Run",
+          "difficulty": "easy",
+          "xp": 10
+        },
+        {
+          "id": "ex_0_1",
+          "title": "HTML: Form",
+          "description": "Hoàn thành bài thực hành về Form trong chương HTML. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "html",
+          "starterCode": "// Bài: Form\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs HTML · thử trong Preview/Run",
+          "difficulty": "medium",
+          "xp": 15
+        },
+        {
+          "id": "ex_0_2",
+          "title": "HTML: Semantic",
+          "description": "Hoàn thành bài thực hành về Semantic trong chương HTML. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "html",
+          "starterCode": "// Bài: Semantic\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs HTML · thử trong Preview/Run",
+          "difficulty": "hard",
+          "xp": 20
+        },
+        {
+          "id": "ex_0_3",
+          "title": "HTML: Media",
+          "description": "Hoàn thành bài thực hành về Media trong chương HTML. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "html",
+          "starterCode": "// Bài: Media\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs HTML · thử trong Preview/Run",
+          "difficulty": "easy",
+          "xp": 25
+        },
+        {
+          "id": "ex_0_4",
+          "title": "HTML: Table",
+          "description": "Hoàn thành bài thực hành về Table trong chương HTML. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "html",
+          "starterCode": "// Bài: Table\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs HTML · thử trong Preview/Run",
+          "difficulty": "medium",
+          "xp": 30
+        },
+        {
+          "id": "ex_0_5",
+          "title": "HTML: Accessibility",
+          "description": "Hoàn thành bài thực hành về Accessibility trong chương HTML. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "html",
+          "starterCode": "// Bài: Accessibility\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs HTML · thử trong Preview/Run",
+          "difficulty": "hard",
+          "xp": 35
+        }
+      ]
+    },
+    {
+      "id": "ch2",
+      "title": "CSS",
+      "order": 2,
+      "exercises": [
+        {
+          "id": "ex_1_0",
+          "title": "CSS: Selector",
+          "description": "Hoàn thành bài thực hành về Selector trong chương CSS. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "css",
+          "starterCode": "// Bài: Selector\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs CSS · thử trong Preview/Run",
+          "difficulty": "easy",
+          "xp": 10
+        },
+        {
+          "id": "ex_1_1",
+          "title": "CSS: Box model",
+          "description": "Hoàn thành bài thực hành về Box model trong chương CSS. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "css",
+          "starterCode": "// Bài: Box model\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs CSS · thử trong Preview/Run",
+          "difficulty": "medium",
+          "xp": 15
+        },
+        {
+          "id": "ex_1_2",
+          "title": "CSS: Flexbox",
+          "description": "Hoàn thành bài thực hành về Flexbox trong chương CSS. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "css",
+          "starterCode": "// Bài: Flexbox\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs CSS · thử trong Preview/Run",
+          "difficulty": "hard",
+          "xp": 20
+        },
+        {
+          "id": "ex_1_3",
+          "title": "CSS: Grid",
+          "description": "Hoàn thành bài thực hành về Grid trong chương CSS. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "css",
+          "starterCode": "// Bài: Grid\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs CSS · thử trong Preview/Run",
+          "difficulty": "easy",
+          "xp": 25
+        },
+        {
+          "id": "ex_1_4",
+          "title": "CSS: Responsive",
+          "description": "Hoàn thành bài thực hành về Responsive trong chương CSS. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "css",
+          "starterCode": "// Bài: Responsive\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs CSS · thử trong Preview/Run",
+          "difficulty": "medium",
+          "xp": 30
+        },
+        {
+          "id": "ex_1_5",
+          "title": "CSS: Animation",
+          "description": "Hoàn thành bài thực hành về Animation trong chương CSS. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "css",
+          "starterCode": "// Bài: Animation\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs CSS · thử trong Preview/Run",
+          "difficulty": "hard",
+          "xp": 35
+        }
+      ]
+    },
+    {
+      "id": "ch3",
+      "title": "JavaScript",
+      "order": 3,
+      "exercises": [
+        {
+          "id": "ex_2_0",
+          "title": "JavaScript: Biến",
+          "description": "Hoàn thành bài thực hành về Biến trong chương JavaScript. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "javascript",
+          "starterCode": "// Bài: Biến\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs JavaScript · thử trong Preview/Run",
+          "difficulty": "easy",
+          "xp": 10
+        },
+        {
+          "id": "ex_2_1",
+          "title": "JavaScript: Hàm",
+          "description": "Hoàn thành bài thực hành về Hàm trong chương JavaScript. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "javascript",
+          "starterCode": "// Bài: Hàm\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs JavaScript · thử trong Preview/Run",
+          "difficulty": "medium",
+          "xp": 15
+        },
+        {
+          "id": "ex_2_2",
+          "title": "JavaScript: DOM",
+          "description": "Hoàn thành bài thực hành về DOM trong chương JavaScript. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "javascript",
+          "starterCode": "// Bài: DOM\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs JavaScript · thử trong Preview/Run",
+          "difficulty": "hard",
+          "xp": 20
+        },
+        {
+          "id": "ex_2_3",
+          "title": "JavaScript: Event",
+          "description": "Hoàn thành bài thực hành về Event trong chương JavaScript. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "javascript",
+          "starterCode": "// Bài: Event\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs JavaScript · thử trong Preview/Run",
+          "difficulty": "easy",
+          "xp": 25
+        },
+        {
+          "id": "ex_2_4",
+          "title": "JavaScript: Fetch",
+          "description": "Hoàn thành bài thực hành về Fetch trong chương JavaScript. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "javascript",
+          "starterCode": "// Bài: Fetch\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs JavaScript · thử trong Preview/Run",
+          "difficulty": "medium",
+          "xp": 30
+        },
+        {
+          "id": "ex_2_5",
+          "title": "JavaScript: Async/Await",
+          "description": "Hoàn thành bài thực hành về Async/Await trong chương JavaScript. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "javascript",
+          "starterCode": "// Bài: Async/Await\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs JavaScript · thử trong Preview/Run",
+          "difficulty": "hard",
+          "xp": 35
+        }
+      ]
+    },
+    {
+      "id": "ch4",
+      "title": "Python",
+      "order": 4,
+      "exercises": [
+        {
+          "id": "ex_3_0",
+          "title": "Python: Syntax",
+          "description": "Hoàn thành bài thực hành về Syntax trong chương Python. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "python",
+          "starterCode": "// Bài: Syntax\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Python · thử trong Preview/Run",
+          "difficulty": "easy",
+          "xp": 10
+        },
+        {
+          "id": "ex_3_1",
+          "title": "Python: List/Dict",
+          "description": "Hoàn thành bài thực hành về List/Dict trong chương Python. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "python",
+          "starterCode": "// Bài: List/Dict\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Python · thử trong Preview/Run",
+          "difficulty": "medium",
+          "xp": 15
+        },
+        {
+          "id": "ex_3_2",
+          "title": "Python: Hàm",
+          "description": "Hoàn thành bài thực hành về Hàm trong chương Python. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "python",
+          "starterCode": "// Bài: Hàm\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Python · thử trong Preview/Run",
+          "difficulty": "hard",
+          "xp": 20
+        },
+        {
+          "id": "ex_3_3",
+          "title": "Python: File",
+          "description": "Hoàn thành bài thực hành về File trong chương Python. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "python",
+          "starterCode": "// Bài: File\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Python · thử trong Preview/Run",
+          "difficulty": "easy",
+          "xp": 25
+        },
+        {
+          "id": "ex_3_4",
+          "title": "Python: OOP",
+          "description": "Hoàn thành bài thực hành về OOP trong chương Python. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "python",
+          "starterCode": "// Bài: OOP\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Python · thử trong Preview/Run",
+          "difficulty": "medium",
+          "xp": 30
+        },
+        {
+          "id": "ex_3_5",
+          "title": "Python: Module",
+          "description": "Hoàn thành bài thực hành về Module trong chương Python. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "python",
+          "starterCode": "// Bài: Module\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Python · thử trong Preview/Run",
+          "difficulty": "hard",
+          "xp": 35
+        }
+      ]
+    },
+    {
+      "id": "ch5",
+      "title": "Git & Deploy",
+      "order": 5,
+      "exercises": [
+        {
+          "id": "ex_4_0",
+          "title": "Git & Deploy: commit",
+          "description": "Hoàn thành bài thực hành về commit trong chương Git & Deploy. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "plaintext",
+          "starterCode": "// Bài: commit\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Git & Deploy · thử trong Preview/Run",
+          "difficulty": "easy",
+          "xp": 10
+        },
+        {
+          "id": "ex_4_1",
+          "title": "Git & Deploy: branch",
+          "description": "Hoàn thành bài thực hành về branch trong chương Git & Deploy. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "plaintext",
+          "starterCode": "// Bài: branch\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Git & Deploy · thử trong Preview/Run",
+          "difficulty": "medium",
+          "xp": 15
+        },
+        {
+          "id": "ex_4_2",
+          "title": "Git & Deploy: GitHub",
+          "description": "Hoàn thành bài thực hành về GitHub trong chương Git & Deploy. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "plaintext",
+          "starterCode": "// Bài: GitHub\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Git & Deploy · thử trong Preview/Run",
+          "difficulty": "hard",
+          "xp": 20
+        },
+        {
+          "id": "ex_4_3",
+          "title": "Git & Deploy: Cloudflare",
+          "description": "Hoàn thành bài thực hành về Cloudflare trong chương Git & Deploy. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "plaintext",
+          "starterCode": "// Bài: Cloudflare\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Git & Deploy · thử trong Preview/Run",
+          "difficulty": "easy",
+          "xp": 25
+        },
+        {
+          "id": "ex_4_4",
+          "title": "Git & Deploy: Domain",
+          "description": "Hoàn thành bài thực hành về Domain trong chương Git & Deploy. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "plaintext",
+          "starterCode": "// Bài: Domain\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Git & Deploy · thử trong Preview/Run",
+          "difficulty": "medium",
+          "xp": 30
+        },
+        {
+          "id": "ex_4_5",
+          "title": "Git & Deploy: HTTPS",
+          "description": "Hoàn thành bài thực hành về HTTPS trong chương Git & Deploy. Viết code sạch, có chú thích tiếng Việt.",
+          "language": "plaintext",
+          "starterCode": "// Bài: HTTPS\n// TODO: viết code tại đây\n",
+          "hint": "Xem docs Git & Deploy · thử trong Preview/Run",
+          "difficulty": "hard",
+          "xp": 35
+        }
+      ]
+    }
+  ]
+}

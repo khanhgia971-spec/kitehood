@@ -1,0 +1,15 @@
+# Base image for code execution sandboxes
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    time \
+    && rm -rf /var/lib/apt/lists/*
+
+# Non-root user
+RUN useradd -m -u 1000 runner
+USER runner
+WORKDIR /home/runner
+
+# Resource limits are enforced by the orchestration layer (Firecracker / gVisor / Docker --memory --cpus)

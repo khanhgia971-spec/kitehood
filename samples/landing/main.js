@@ -1,0 +1,1 @@
+document.getElementById('cta').onclick=()=>alert('Chào mừng đến Mới Học Code!');
