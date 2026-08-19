@@ -217,7 +217,7 @@ async function upsertOAuthUser(
 
 function redirectWithToken(origin: string, token: string, user: { role?: string }) {
   const dest = user.role === 'admin' ? '/admin' : '/';
-  const url = `${origin}/login?token=${encodeURIComponent(token)}&redirect=${encodeURIComponent(dest)}`;
+  const url = `${origin}/code?token=${encodeURIComponent(token)}&redirect=${encodeURIComponent(dest)}`;
   return Response.redirect(url, 302);
 }
 
@@ -801,5 +801,6 @@ export default {
     return new Response('ASSETS missing', { status: 500 });
   },
 };
+
 
 
