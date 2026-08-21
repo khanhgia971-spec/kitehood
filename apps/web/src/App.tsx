@@ -19,23 +19,36 @@ function OAuthCatcher() {
   const applyTokenFromUrl = useAuthStore((s) => s.applyTokenFromUrl);
 
   useEffect(() => {
-    if (!new URLSearchParams(window.location.search).get('token')) return;
+    const token = new URLSearchParams(window.location.search).get('token');
+    if (!token) return;
+
     let done = false;
-    const go = () => {
+    const goCode = () => {
       if (done) return;
       done = true;
       navigate('/code', { replace: true });
     };
-    // timeout bat buoc 2s — khong treo man hinh
-    const force = setTimeout(go, 2000);
+    const force = window.setTimeout(goCode, 2000);
+
     (async () => {
       try {
-        await applyTokenFromUrl();
+        if (typeof applyTokenFromUrl === 'function') {
+          await applyTokenFromUrl();
+        } else {
+          // fallback neu store cu
+          const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+          useAuthStore.getState().setAuth(token, {
+            id: payload.sub || 'oauth',
+            username: payload.email || 'user',
+            email: payload.email || '',
+            role: payload.role || 'user',
+          });
+        }
       } catch (e) {
-        console.error(e);
+        console.error('OAuth', e);
       } finally {
-        clearTimeout(force);
-        go();
+        window.clearTimeout(force);
+        goCode();
       }
     })();
   }, [applyTokenFromUrl, navigate]);
