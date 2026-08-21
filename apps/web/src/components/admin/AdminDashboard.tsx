@@ -30,6 +30,10 @@ export function AdminDashboard() {
       if (sRes.ok) setStats(await sRes.json());
       else setMsg('Không tải stats (cần role admin + token)');
       if (uRes.ok) setUsers((await uRes.json()).users || []);
+      else {
+        const j = await uRes.json().catch(() => ({}));
+        setMsg((j as any).error || ('Users HTTP ' + uRes.status + ' — can login admin'));
+      }
     } catch (e: any) {
       setMsg(e?.message || 'Lỗi tải admin');
     } finally {
@@ -43,9 +47,9 @@ export function AdminDashboard() {
 
   async function banUser(id: string) {
     const reason = prompt('Lý do khóa tài khoản:', 'Vi phạm quy định') || 'Banned by admin';
-    const res = await apiFetch(`/admin/users/${id}/ban`, {
+    const res = await apiFetch('/admin/ban', {
       method: 'POST',
-      body: JSON.stringify({ reason }),
+      body: JSON.stringify({ userId: id, reason, hours: 24 }),
     });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
@@ -56,7 +60,7 @@ export function AdminDashboard() {
   }
 
   async function unbanUser(id: string) {
-    const res = await apiFetch(`/admin/users/${id}/unban`, { method: 'POST', body: '{}' });
+    const res = await apiFetch('/admin/unban', { method: 'POST', body: JSON.stringify({ userId: id }) });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
       alert((j as any).error || 'Unban failed');
@@ -67,7 +71,7 @@ export function AdminDashboard() {
 
   async function deleteUser(id: string) {
     if (!confirm('Xóa vĩnh viễn tài khoản + dữ liệu sync/inbox?')) return;
-    const res = await apiFetch(`/admin/users/${id}`, { method: 'DELETE' });
+    const res = await apiFetch('/admin/delete-user', { method: 'POST', body: JSON.stringify({ userId: id, reason: 'Admin xoa' }) });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
       alert((j as any).error || 'Delete failed');

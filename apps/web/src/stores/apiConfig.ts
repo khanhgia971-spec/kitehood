@@ -71,6 +71,20 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
   const url = path.startsWith('http')
     ? path
     : `${base}${path.startsWith('/') ? path : '/' + path}`;
-  const headers = { ...state.getHeaders(), ...(init.headers as Record<string, string> || {}) };
+  const headers: Record<string, string> = {
+    ...state.getHeaders(),
+    ...(init.headers as Record<string, string> || {}),
+  };
+  // JWT tu dang nhap (kitehood-auth) — bat buoc cho /admin/*
+  if (!headers.Authorization && !headers.authorization) {
+    try {
+      const raw = localStorage.getItem('kitehood-auth');
+      if (raw) {
+        const j = JSON.parse(raw);
+        const token = j?.state?.token || j?.token;
+        if (token) headers.Authorization = 'Bearer ' + token;
+      }
+    } catch { /* */ }
+  }
   return fetch(url, { ...init, headers });
 }
