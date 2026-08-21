@@ -1,4 +1,4 @@
-﻿export interface Env {
+export interface Env {
   ASSETS: Fetcher;
   KV?: KVNamespace;
   DB?: D1Database;
@@ -18,7 +18,7 @@ const cors: Record<string, string> = {
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', ...cors },
+    headers: { 'Content-Type': 'application/json; charset=utf-8', ...cors },
   });
 }
 
@@ -332,8 +332,8 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
+        Accept: 'application/json; charset=utf-8',
       },
       body: JSON.stringify({
         client_id: env.GITHUB_CLIENT_ID,
@@ -435,7 +435,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     if (!body.email || !body.password) return json({ error: 'email vÃ  password báº¯t buá»™c' }, 400);
     const email = body.email.toLowerCase().trim();
     const raw = await env.KV.get(`user:email:${email}`);
-    if (!raw) return json({ error: 'Email hoáº·c máº­t kháº©u sai' }, 401);
+    if (!raw) return json({ error: 'Email hoac mat khau sai' }, 401);
     const user = JSON.parse(raw) as {
       id: string; username: string; email: string; password_hash?: string; role: string;
     };
@@ -443,7 +443,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       return json({ error: 'TÃ i khoáº£n nÃ y Ä‘Äƒng nháº­p báº±ng Google/GitHub' }, 401);
     }
     const password_hash = await hashPassword(body.password, secret);
-    if (password_hash !== user.password_hash) return json({ error: 'Email hoáº·c máº­t kháº©u sai' }, 401);
+    if (password_hash !== user.password_hash) return json({ error: 'Email hoac mat khau sai' }, 401);
     if (user.banned || user.is_banned) {
       return json({
         error: 'TÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a. Vui lÃ²ng Ä‘Äƒng nháº­p tÃ i khoáº£n khÃ¡c hoáº·c táº¡o tÃ i khoáº£n má»›i.',

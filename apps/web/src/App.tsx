@@ -17,42 +17,16 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 function OAuthCatcher() {
   const navigate = useNavigate();
   const applyTokenFromUrl = useAuthStore((s) => s.applyTokenFromUrl);
-
   useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get('token');
-    if (!token) return;
-
+    if (!new URLSearchParams(window.location.search).get('token')) return;
     let done = false;
-    const goCode = () => {
-      if (done) return;
-      done = true;
-      navigate('/code', { replace: true });
-    };
-    const force = window.setTimeout(goCode, 2000);
-
+    const go = () => { if (!done) { done = true; navigate('/code', { replace: true }); } };
+    const t = window.setTimeout(go, 2000);
     (async () => {
-      try {
-        if (typeof applyTokenFromUrl === 'function') {
-          await applyTokenFromUrl();
-        } else {
-          // fallback neu store cu
-          const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-          useAuthStore.getState().setAuth(token, {
-            id: payload.sub || 'oauth',
-            username: payload.email || 'user',
-            email: payload.email || '',
-            role: payload.role || 'user',
-          });
-        }
-      } catch (e) {
-        console.error('OAuth', e);
-      } finally {
-        window.clearTimeout(force);
-        goCode();
-      }
+      try { await applyTokenFromUrl(); } catch (e) { console.error(e); }
+      finally { clearTimeout(t); go(); }
     })();
   }, [applyTokenFromUrl, navigate]);
-
   return null;
 }
 
@@ -61,10 +35,8 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', 'dark');
     document.title = 'KiteHood';
   }, []);
-
   const user = useAuthStore((s) => s.user);
   const ban = useAdminModStore((s) => s.isBanned(user?.id, user?.email));
-
   return (
     <>
       <OAuthCatcher />

@@ -7,8 +7,6 @@ export interface AuthUser {
   email: string;
   role: string;
   avatarUrl?: string;
-  banned?: boolean;
-  banReason?: string;
   [key: string]: unknown;
 }
 
@@ -24,14 +22,9 @@ interface AuthState {
 
 async function parseJson(res: Response) {
   const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(
-      text.trimStart().startsWith('<')
-        ? 'API tra HTML — Worker/SPA'
-        : text.slice(0, 120) || 'Loi mang'
-    );
+  try { return JSON.parse(text); }
+  catch {
+    throw new Error(text.trimStart().startsWith('<') ? 'API tra HTML' : text.slice(0, 100) || 'Loi');
   }
 }
 
@@ -54,16 +47,11 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
-
       setAuth: (token, user) => set({ token, user }),
-
       logout: () => {
         set({ token: null, user: null });
-        try {
-          localStorage.removeItem('kitehood-auth');
-        } catch {}
+        try { localStorage.removeItem('kitehood-auth'); } catch {}
       },
-
       login: async (email, password) => {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -71,15 +59,9 @@ export const useAuthStore = create<AuthState>()(
           body: JSON.stringify({ email, password }),
         });
         const data = await parseJson(res);
-        if (!res.ok) {
-          const err: any = new Error(data.error || 'Dang nhap that bai');
-          err.banned = data.banned;
-          err.reason = data.reason;
-          throw err;
-        }
+        if (!res.ok) throw new Error(data.error || 'Email hoac mat khau sai');
         set({ token: data.token, user: data.user });
       },
-
       register: async (email, password, name) => {
         const res = await fetch('/api/auth/register', {
           method: 'POST',
@@ -90,44 +72,27 @@ export const useAuthStore = create<AuthState>()(
         if (!res.ok) throw new Error(data.error || 'Dang ky that bai');
         set({ token: data.token, user: data.user });
       },
-
       applyTokenFromUrl: async () => {
-        const params = new URLSearchParams(window.location.search);
-        const err = params.get('error');
+        const token = new URLSearchParams(window.location.search).get('token');
+        const err = new URLSearchParams(window.location.search).get('error');
         if (err) throw new Error(err);
-        const token = params.get('token');
         if (!token) return false;
-
-        // Luu NGAY — khong treo
         let user = userFromJwt(token);
         set({ token, user });
-        try {
-          window.history.replaceState({}, '', '/code');
-        } catch {}
-
+        try { window.history.replaceState({}, '', '/code'); } catch {}
         try {
           const ctrl = new AbortController();
-          const t = setTimeout(() => ctrl.abort(), 2500);
+          setTimeout(() => ctrl.abort(), 2500);
           const res = await fetch('/api/auth/me', {
             headers: { Authorization: 'Bearer ' + token },
             signal: ctrl.signal,
           });
-          clearTimeout(t);
           const data = await parseJson(res);
-          if (data.banned || data.user?.banned) {
-            set({ token: null, user: null });
-            throw new Error(data.reason || data.error || 'Tai khoan bi khoa');
-          }
           if (data.user) set({ token, user: data.user });
-        } catch (e: any) {
-          if (e?.message && /khoa|banned|ban/i.test(e.message)) throw e;
-        }
+        } catch {}
         return true;
       },
     }),
-    {
-      name: 'kitehood-auth',
-      partialize: (s) => ({ token: s.token, user: s.user }),
-    }
+    { name: 'kitehood-auth', partialize: (s) => ({ token: s.token, user: s.user }) }
   )
 );
