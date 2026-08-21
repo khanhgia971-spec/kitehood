@@ -259,7 +259,6 @@ async function isEmailDeleted(env: Env, email: string): Promise<{ deleted: boole
   return { deleted: false };
 }
 
-// FIX_LET_USER_BAN
 function clearBanIfExpired(u: any): any {
   if (!u) return u;
   const until = u.ban_until || u.banUntil;
