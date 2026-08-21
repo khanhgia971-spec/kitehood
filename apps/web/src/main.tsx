@@ -7,7 +7,7 @@ import './styles/global.css';
 try {
   document.body.classList.add('perf-lite');
 } catch {
-  /* ignore */
+  /* */
 }
 
 const rootEl = document.getElementById('root');
