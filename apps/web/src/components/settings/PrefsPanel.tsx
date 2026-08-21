@@ -68,8 +68,8 @@ export function PrefsPanel() {
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (!f || f.size > 400000) {
-                    setProfMsg('Anh max 400KB');
+                  if (!f || false && f.size > 999999999) {
+                    /* gif ok */
                     return;
                   }
                   const r = new FileReader();

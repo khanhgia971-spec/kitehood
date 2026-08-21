@@ -6,6 +6,7 @@ import { LoginPage } from './components/auth/LoginPage';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { LandingPage } from './components/landing/LandingPage';
 import { BanLockScreen } from './components/auth/BanLockScreen';
+import { DeletedAccountModal } from './components/auth/DeletedAccountModal';
 import { useAdminModStore } from './stores/adminMod';
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -15,18 +16,16 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function OAuthCatcher() {
-  const navigate = useNavigate();
   const applyTokenFromUrl = useAuthStore((s) => s.applyTokenFromUrl);
   useEffect(() => {
     if (!new URLSearchParams(window.location.search).get('token')) return;
     let done = false;
     const go = () => {
-      if (!done) {
-        done = true;
-        window.location.replace('/code');
-      }
+      if (done) return;
+      done = true;
+      window.location.replace('/code');
     };
-    const t = setTimeout(go, 1000);
+    const t = setTimeout(go, 1200);
     (async () => {
       try {
         await applyTokenFromUrl();
@@ -37,7 +36,7 @@ function OAuthCatcher() {
         go();
       }
     })();
-  }, [applyTokenFromUrl, navigate]);
+  }, [applyTokenFromUrl]);
   return null;
 }
 
@@ -46,12 +45,36 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', 'dark');
     document.title = 'KiteHood';
   }, []);
+
   const user = useAuthStore((s) => s.user);
-  const ban = useAdminModStore((s) => s.isBanned?.(user?.id, user?.email));
+  const deletedNotice = useAuthStore((s) => s.deletedNotice);
+  const clearDeletedNotice = useAuthStore((s) => s.clearDeletedNotice);
+  const logout = useAuthStore((s) => s.logout);
+  const banLocal = useAdminModStore((s) => s.isBanned?.(user?.id, user?.email));
+
+  const banInfo =
+    user?.banned || banLocal
+      ? {
+          reason: (user?.banReason as string) || banLocal?.reason || 'Bi khoa',
+          until: (user?.banUntil as string) || banLocal?.until || null,
+          from: (user?.banFrom as string) || null,
+        }
+      : null;
+
   return (
     <>
       <OAuthCatcher />
-      {ban ? <BanLockScreen ban={ban} /> : null}
+      {banInfo && <BanLockScreen ban={banInfo} />}
+      {deletedNotice && (
+        <DeletedAccountModal
+          reason={deletedNotice.reason}
+          onAccept={() => {
+            clearDeletedNotice();
+            logout();
+            window.location.href = '/';
+          }}
+        />
+      )}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/code" element={<IDELayout />} />

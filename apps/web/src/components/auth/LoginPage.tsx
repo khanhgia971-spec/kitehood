@@ -34,20 +34,20 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (user) navigate('/code', { replace: true });
-  }, [user, navigate]);
+    if (user) window.location.replace('/code');
+  }, [user]);
 
   useEffect(() => {
     if (!new URLSearchParams(window.location.search).get('token')) return;
     (async () => {
       try {
-        await applyTokenFromUrl();
-        navigate('/code', { replace: true });
+        const ok = await applyTokenFromUrl();
+        if (ok) window.location.replace('/code');
       } catch (e: any) {
         setErr(e?.message || 'OAuth');
       }
     })();
-  }, [applyTokenFromUrl, navigate]);
+  }, [applyTokenFromUrl]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,8 +56,7 @@ export function LoginPage() {
     try {
       if (mode === 'login') await login(email, password);
       else await register(email, password, name || email.split('@')[0]);
-      // bat buoc vao code
-      window.location.href = '/code';
+      window.location.replace('/code');
     } catch (ex: any) {
       setErr(ex?.message || 'That bai');
       setBusy(false);
@@ -67,9 +66,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col">
       <header className="h-12 px-4 flex items-center border-b border-white/10">
-        <Link to="/" className="font-bold">
-          KiteHood
-        </Link>
+        <Link to="/" className="font-bold">KiteHood</Link>
       </header>
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md p-6 rounded-2xl border border-white/10 bg-white/5">
@@ -86,7 +83,7 @@ export function LoginPage() {
             )}
             <input type="email" required className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
             <input type="password" required minLength={4} className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10" placeholder="Mat khau" value={password} onChange={(e) => setPassword(e.target.value)} />
-            {err && <p className="text-red-400 text-sm whitespace-pre-wrap">{err}</p>}
+            {err && <p className="text-red-400 text-sm">{err}</p>}
             <button type="submit" disabled={busy} className="w-full py-2.5 rounded-xl bg-indigo-500 font-semibold text-sm">
               {busy ? '...' : mode === 'register' ? 'Tao tai khoan' : 'Dang nhap'}
             </button>

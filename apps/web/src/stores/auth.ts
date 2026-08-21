@@ -7,18 +7,25 @@ export interface AuthUser {
   email: string;
   role: string;
   avatarUrl?: string;
+  banned?: boolean;
+  banReason?: string;
+  banUntil?: string | null;
+  banFrom?: string | null;
   [key: string]: unknown;
 }
 
 type AuthState = {
   token: string | null;
   user: AuthUser | null;
+  deletedNotice: { reason?: string } | null;
   setAuth: (token: string, user: AuthUser) => void;
   logout: () => void;
+  clearDeletedNotice: () => void;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name?: string) => Promise<void>;
   applyTokenFromUrl: () => Promise<boolean>;
   updateProfile: (data: { username?: string; avatarUrl?: string }) => Promise<void>;
+  refreshMe: () => Promise<void>;
 };
 
 async function parseJson(res: Response) {
@@ -26,11 +33,7 @@ async function parseJson(res: Response) {
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(
-      text.trimStart().startsWith('<')
-        ? 'API tra HTML — deploy Worker + hard refresh'
-        : text.slice(0, 120) || 'Loi mang'
-    );
+    throw new Error(text.trimStart().startsWith('<') ? 'API HTML — hard refresh' : text.slice(0, 100) || 'Loi');
   }
 }
 
@@ -53,6 +56,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       token: null,
       user: null,
+      deletedNotice: null,
       setAuth: (token, user) => set({ token, user }),
       logout: () => {
         set({ token: null, user: null });
@@ -60,6 +64,8 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem('kitehood-auth');
         } catch {}
       },
+      clearDeletedNotice: () => set({ deletedNotice: null }),
+
       login: async (email, password) => {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -67,23 +73,29 @@ export const useAuthStore = create<AuthState>()(
           body: JSON.stringify({ email, password }),
         });
         const data = await parseJson(res);
+        if (data.deleted) {
+          set({ token: null, user: null, deletedNotice: { reason: data.reason } });
+          throw new Error(data.error || 'Tai khoan da bi xoa');
+        }
         if (!res.ok) throw new Error(data.error || 'Email hoac mat khau sai');
-        set({ token: data.token, user: data.user });
+        set({ token: data.token, user: data.user, deletedNotice: null });
       },
+
       register: async (email, password, name) => {
         const res = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            password,
-            username: name || email.split('@')[0],
-          }),
+          body: JSON.stringify({ email, password, username: name || email.split('@')[0] }),
         });
         const data = await parseJson(res);
+        if (data.deleted) {
+          set({ deletedNotice: { reason: data.reason } });
+          throw new Error(data.error || 'Email da bi xoa vinh vien');
+        }
         if (!res.ok) throw new Error(data.error || 'Dang ky that bai');
-        set({ token: data.token, user: data.user });
+        set({ token: data.token, user: data.user, deletedNotice: null });
       },
+
       applyTokenFromUrl: async () => {
         const q = new URLSearchParams(window.location.search);
         if (q.get('error')) throw new Error(q.get('error') || 'OAuth');
@@ -95,32 +107,49 @@ export const useAuthStore = create<AuthState>()(
         } catch {}
         try {
           const ac = new AbortController();
-          setTimeout(() => ac.abort(), 2000);
+          setTimeout(() => ac.abort(), 2500);
           const res = await fetch('/api/auth/me', {
             headers: { Authorization: 'Bearer ' + token },
             signal: ac.signal,
           });
           const data = await parseJson(res);
+          if (data.deleted) {
+            set({ token: null, user: null, deletedNotice: { reason: data.reason } });
+            return false;
+          }
           if (data.user) set({ token, user: data.user });
         } catch {}
         return true;
       },
+
       updateProfile: async ({ username, avatarUrl }) => {
         const token = get().token;
         if (!token) throw new Error('Chua dang nhap');
         const res = await fetch('/api/auth/profile', {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + token,
-          },
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
           body: JSON.stringify({ username, avatarUrl }),
         });
         const data = await parseJson(res);
         if (!res.ok) throw new Error(data.error || 'Cap nhat that bai');
         set({ user: data.user });
       },
+
+      refreshMe: async () => {
+        const token = get().token;
+        if (!token) return;
+        const res = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+        const data = await parseJson(res);
+        if (data.deleted) {
+          set({ token: null, user: null, deletedNotice: { reason: data.reason } });
+          return;
+        }
+        if (data.user) set({ user: data.user });
+      },
     }),
-    { name: 'kitehood-auth', partialize: (s) => ({ token: s.token, user: s.user }) }
+    {
+      name: 'kitehood-auth',
+      partialize: (s) => ({ token: s.token, user: s.user }),
+    }
   )
 );

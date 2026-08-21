@@ -233,6 +233,48 @@ function redirectWithToken(origin: string, token: string, user: { role?: string 
   return Response.redirect(url, 302);
 }
 
+
+async function isEmailDeleted(env: Env, email: string): Promise<{ deleted: boolean; reason?: string }> {
+  const e = email.toLowerCase();
+  if (env.KV) {
+    const raw = await env.KV.get('deleted_email:' + e);
+    if (raw) {
+      try {
+        const o = JSON.parse(raw);
+        return { deleted: true, reason: o.reason || 'Admin da xoa tai khoan' };
+      } catch {
+        return { deleted: true, reason: 'Admin da xoa tai khoan' };
+      }
+    }
+  }
+  if (env.DB) {
+    try {
+      await env.DB.prepare(
+        `CREATE TABLE IF NOT EXISTS deleted_emails (email TEXT PRIMARY KEY, reason TEXT, deleted_at TEXT)`
+      ).run();
+      const row = await env.DB.prepare(`SELECT reason FROM deleted_emails WHERE email = ?`).bind(e).first();
+      if (row) return { deleted: true, reason: String((row as any).reason || 'Admin da xoa') };
+    } catch {}
+  }
+  return { deleted: false };
+}
+
+function clearBanIfExpired(u: any): any {
+  if (!u) return u;
+  const until = u.ban_until || u.banUntil;
+  if (until && (u.banned || u.is_banned)) {
+    const t = Date.parse(until);
+    if (!Number.isNaN(t) && Date.now() > t) {
+      u.banned = false;
+      u.is_banned = false;
+      u.ban_reason = null;
+      u.ban_until = null;
+      u.banUntil = null;
+    }
+  }
+  return u;
+}
+
 async function handleApi(request: Request, env: Env): Promise<Response> {
   if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
 
@@ -290,7 +332,13 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     const profile = (await profileRes.json()) as any;
-    if (!profile.email) return json({ error: 'Google không trả email' }, 400);
+    if (!profile.email) return json({ error: 'Google khong tra email' }, 400);
+    {
+      const d = await isEmailDeleted(env, profile.email);
+      if (d.deleted) {
+        return Response.redirect(origin + '/login?error=' + encodeURIComponent('Tai khoan da bi xoa: ' + (d.reason || '')), 302);
+      }
+    }
 
     const user = await upsertOAuthUser(env.KV, {
       email: profile.email,
@@ -421,7 +469,13 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
   if (request.method === 'POST' && path === '/auth/register') {
     const body = (await request.json()) as { username?: string; email?: string; password?: string };
     if (!body.email || !body.password) return json({ error: 'email và password bắt buộc' }, 400);
+    
     const email = body.email.toLowerCase().trim();
+    const del = await isEmailDeleted(env, email);
+    if (del.deleted) {
+      return json({ deleted: true, reason: del.reason, error: 'Email da bi xoa vinh vien. Khong the tao TK.' }, 403);
+    }
+
     const username = (body.username || email.split('@')[0]).trim();
     if (await env.KV.get(`user:email:${email}`)) return json({ error: 'Email da duoc su dung' }, 409);
     const id = crypto.randomUUID();
@@ -444,8 +498,12 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
 
   if (request.method === 'POST' && path === '/auth/login') {
     const body = (await request.json()) as { email?: string; password?: string };
-    if (!body.email || !body.password) return json({ error: 'email và password bắt buộc' }, 400);
+    if (!body.email || !body.password) return json({ error: 'Can email va password' }, 400);
     const email = body.email.toLowerCase().trim();
+    const delL = await isEmailDeleted(env, email);
+    if (delL.deleted) {
+      return json({ deleted: true, reason: delL.reason, error: 'Tai khoan da bi xoa vinh vien' }, 403);
+    }
     const raw = await env.KV.get(`user:email:${email}`);
     if (!raw) return json({ error: 'Email hoac mat khau sai' }, 401);
     const user = JSON.parse(raw) as {
@@ -464,12 +522,23 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     }
     const password_hash = await hashPassword(body.password, secret);
     if (password_hash !== user.password_hash) return json({ error: 'Email hoac mat khau sai' }, 401);
+    user = clearBanIfExpired(user);
     if (user.banned || user.is_banned) {
-      return json({
-        error: 'Tài khoản đã bị khóa. Vui lòng đăng nhập tài khoản khác hoặc tạo tài khoản mới.',
-        banned: true,
-        reason: user.ban_reason || user.banned_reason || 'Banned by admin',
-      }, 403);
+      const until = user.ban_until || user.banUntil || null;
+      if (until && Date.parse(until) < Date.now()) {
+        user.banned = false;
+        user.is_banned = false;
+        await env.KV.put(`user:email:${email}`, JSON.stringify(user));
+        await env.KV.put(`user:id:${user.id}`, JSON.stringify(user));
+      } else {
+        return json({
+          error: 'Tai khoan da bi khoa',
+          banned: true,
+          reason: user.ban_reason || user.banned_reason || 'Banned by admin',
+          until,
+          from: user.ban_from || user.banFrom || null,
+        }, 403);
+      }
     }
     const token = await signJwt({ sub: user.id, role: user.role }, secret);
     await upsertAccountCloud(env, {
@@ -630,55 +699,27 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
 
     // LIST users from KV
     async function listUsersFromKV() {
-      const map = new Map<string, any>();
-      // 1) KV
       const list = await env.KV!.list({ prefix: 'user:id:' });
+      const users = [];
       for (const k of list.keys) {
         const raw = await env.KV!.get(k.name);
         if (!raw) continue;
         try {
           const u = JSON.parse(raw);
-          map.set(u.id, {
+          users.push({
             id: u.id,
             username: u.username,
             email: u.email,
             role: u.role || 'user',
             provider: u.provider,
-            avatarUrl: u.avatarUrl || u.avatar_url || null,
             banned: !!(u.banned || u.is_banned),
             ban_reason: u.ban_reason || u.banned_reason || null,
             created_at: u.created_at,
             last_login_at: u.last_login_at,
-            source: 'KV',
           });
         } catch { /* */ }
       }
-      // 2) D1 accounts (admin thay duoc ke ca khi KV miss)
-      if (env.DB) {
-        try {
-          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS accounts (
-            id TEXT PRIMARY KEY, username TEXT, email TEXT, role TEXT, provider TEXT,
-            avatar_url TEXT, last_login_at TEXT, updated_at TEXT
-          )`).run();
-          const { results } = await env.DB.prepare(`SELECT * FROM accounts ORDER BY last_login_at DESC LIMIT 500`).all();
-          for (const r of results || []) {
-            const id = String((r as any).id);
-            const prev = map.get(id) || {};
-            map.set(id, {
-              ...prev,
-              id,
-              username: (r as any).username || prev.username,
-              email: (r as any).email || prev.email,
-              role: (r as any).role || prev.role || 'user',
-              provider: (r as any).provider || prev.provider,
-              avatarUrl: (r as any).avatar_url || prev.avatarUrl || null,
-              last_login_at: (r as any).last_login_at || prev.last_login_at,
-              source: prev.source ? prev.source + '+D1' : 'D1',
-            });
-          }
-        } catch { /* */ }
-      }
-      return Array.from(map.values());
+      return users;
     }
 
     if (request.method === 'GET' && path === '/admin/stats') {
@@ -836,6 +877,87 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       }
       return json({ ok: true, fileId: id, userId: uid });
     }
+
+    
+    // BAN user: { userId|email, reason, until?: ISO string|null, hours?: number }
+    if (request.method === 'POST' && path === '/admin/ban') {
+      const body = (await request.json()) as { userId?: string; email?: string; reason?: string; until?: string | null; hours?: number };
+      let uid = body.userId;
+      let raw = uid ? await env.KV.get(`user:id:${uid}`) : null;
+      if (!raw && body.email) {
+        raw = await env.KV.get(`user:email:${body.email.toLowerCase()}`);
+      }
+      if (!raw) return json({ error: 'User not found' }, 404);
+      const u = JSON.parse(raw);
+      if (u.role === 'admin' || String(u.email).toLowerCase() === 'khanhgia971@gmail.com') {
+        return json({ error: 'Khong the khoa admin' }, 403);
+      }
+      const from = new Date().toISOString();
+      let until: string | null = body.until || null;
+      if (!until && body.hours && body.hours > 0) {
+        until = new Date(Date.now() + body.hours * 3600 * 1000).toISOString();
+      }
+      u.banned = true;
+      u.is_banned = true;
+      u.ban_reason = body.reason || 'Banned by admin';
+      u.ban_from = from;
+      u.ban_until = until;
+      await env.KV.put(`user:id:${u.id}`, JSON.stringify(u));
+      if (u.email) await env.KV.put(`user:email:${String(u.email).toLowerCase()}`, JSON.stringify(u));
+      try {
+        await upsertAccountCloud(env, { id: u.id, username: u.username, email: u.email, role: u.role, provider: u.provider || 'email', avatar: u.avatarUrl });
+      } catch {}
+      return json({ ok: true, id: u.id, ban_from: from, ban_until: until, reason: u.ban_reason });
+    }
+
+    // UNBAN
+    if (request.method === 'POST' && path === '/admin/unban') {
+      const body = (await request.json()) as { userId?: string; email?: string };
+      let raw = body.userId ? await env.KV.get(`user:id:${body.userId}`) : null;
+      if (!raw && body.email) raw = await env.KV.get(`user:email:${body.email.toLowerCase()}`);
+      if (!raw) return json({ error: 'User not found' }, 404);
+      const u = JSON.parse(raw);
+      u.banned = false; u.is_banned = false;
+      u.ban_reason = null; u.ban_until = null; u.ban_from = null;
+      await env.KV.put(`user:id:${u.id}`, JSON.stringify(u));
+      if (u.email) await env.KV.put(`user:email:${String(u.email).toLowerCase()}`, JSON.stringify(u));
+      return json({ ok: true });
+    }
+
+    // DELETE permanent
+    if (request.method === 'POST' && path === '/admin/delete-user') {
+      const body = (await request.json()) as { userId?: string; email?: string; reason?: string };
+      let raw = body.userId ? await env.KV.get(`user:id:${body.userId}`) : null;
+      if (!raw && body.email) raw = await env.KV.get(`user:email:${body.email.toLowerCase()}`);
+      if (!raw) return json({ error: 'User not found' }, 404);
+      const u = JSON.parse(raw);
+      if (u.role === 'admin' || String(u.email).toLowerCase() === 'khanhgia971@gmail.com') {
+        return json({ error: 'Khong xoa admin' }, 403);
+      }
+      const email = String(u.email || '').toLowerCase();
+      const reason = body.reason || 'Admin da xoa tai khoan';
+      const at = new Date().toISOString();
+      if (email) {
+        await env.KV.put('deleted_email:' + email, JSON.stringify({ reason, deleted_at: at }));
+        if (env.DB) {
+          try {
+            await env.DB.prepare(
+              `CREATE TABLE IF NOT EXISTS deleted_emails (email TEXT PRIMARY KEY, reason TEXT, deleted_at TEXT)`
+            ).run();
+            await env.DB.prepare(
+              `INSERT OR REPLACE INTO deleted_emails (email, reason, deleted_at) VALUES (?, ?, ?)`
+            ).bind(email, reason, at).run();
+          } catch {}
+        }
+      }
+      await env.KV.delete(`user:id:${u.id}`);
+      if (email) await env.KV.delete(`user:email:${email}`);
+      if (env.DB) {
+        try { await env.DB.prepare(`DELETE FROM accounts WHERE id = ?`).bind(u.id).run(); } catch {}
+      }
+      return json({ ok: true, email, reason });
+    }
+
 
     return json({ error: 'Admin route not found', path }, 404);
   }
