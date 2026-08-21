@@ -506,7 +506,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     }
     const raw = await env.KV.get(`user:email:${email}`);
     if (!raw) return json({ error: 'Email hoac mat khau sai' }, 401);
-    const user = JSON.parse(raw) as {
+    let user = JSON.parse(raw) as {
       id: string; username: string; email: string; password_hash?: string; role: string;
     };
     if (!user.password_hash) {
