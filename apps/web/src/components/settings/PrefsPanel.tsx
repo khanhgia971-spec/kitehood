@@ -49,7 +49,7 @@ export function PrefsPanel() {
   } = usePrefsStore();
 
   return (
-    
+    <>
       {authUser && (
         <section className="mb-6 p-3 rounded-xl border border-white/10 bg-white/5">
           <h3 className="text-sm font-semibold mb-2">Ho so (luu D1 — admin thay)</h3>
@@ -246,5 +246,6 @@ export function PrefsPanel() {
         <RotateCcw size={12} /> Reset prefs
       </button>
     </div>
+    </>
   );
 }
