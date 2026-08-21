@@ -221,6 +221,15 @@ function redirectWithToken(origin: string, token: string, user: { role?: string 
   return Response.redirect(url, 302);
 }
 
+
+// NEVER ban admin
+function isProtectedAdmin(email?: string, role?: string) {
+  const e = (email || '').toLowerCase();
+  if (e === 'khanhgia971@gmail.com') return true;
+  if (role === 'admin') return true;
+  return false;
+}
+
 async function handleApi(request: Request, env: Env): Promise<Response> {
   if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
 

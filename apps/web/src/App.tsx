@@ -18,13 +18,18 @@ function OAuthCatcher() {
   const navigate = useNavigate();
   const applyTokenFromUrl = useAuthStore((s) => s.applyTokenFromUrl);
   useEffect(() => {
-    if (!new URLSearchParams(window.location.search).get('token')) return;
+    const token = new URLSearchParams(location.search).get('token');
+    if (!token) return;
     let done = false;
-    const go = () => { if (!done) { done = true; navigate('/code', { replace: true }); } };
-    const t = window.setTimeout(go, 2000);
+    const go = () => {
+      if (done) return;
+      done = true;
+      navigate('/code', { replace: true });
+    };
+    const timer = setTimeout(go, 1500);
     (async () => {
       try { await applyTokenFromUrl(); } catch (e) { console.error(e); }
-      finally { clearTimeout(t); go(); }
+      finally { clearTimeout(timer); go(); }
     })();
   }, [applyTokenFromUrl, navigate]);
   return null;
@@ -36,11 +41,11 @@ export default function App() {
     document.title = 'KiteHood';
   }, []);
   const user = useAuthStore((s) => s.user);
-  const ban = useAdminModStore((s) => s.isBanned(user?.id, user?.email));
+  const ban = useAdminModStore((s) => s.isBanned?.(user?.id, user?.email));
   return (
     <>
       <OAuthCatcher />
-      {ban && <BanLockScreen ban={ban} />}
+      {ban ? <BanLockScreen ban={ban} /> : null}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/code" element={<IDELayout />} />
