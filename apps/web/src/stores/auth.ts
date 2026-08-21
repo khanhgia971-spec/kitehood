@@ -22,14 +22,23 @@ interface AuthState {
 
 async function parseJson(res: Response) {
   const text = await res.text();
+  try { return JSON.parse(text); }
+  catch {
+    throw new Error(text.trimStart().startsWith('<') ? 'API tra HTML' : (text.slice(0, 100) || 'Loi'));
+  }
+}
+
+function userFromJwt(token: string): AuthUser {
   try {
-    return JSON.parse(text);
+    const p = JSON.parse(atob(token.split('.')[1]));
+    return {
+      id: p.sub || 'oauth',
+      username: p.email || p.sub || 'user',
+      email: p.email || '',
+      role: p.role || 'user',
+    };
   } catch {
-    throw new Error(
-      text.startsWith('<!')
-        ? 'API tra HTML — kiem tra run_worker_first / Worker deploy'
-        : text.slice(0, 120) || 'Loi mang'
-    );
+    return { id: 'oauth', username: 'user', email: '', role: 'user' };
   }
 }
 
@@ -39,7 +48,10 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       setAuth: (token, user) => set({ token, user }),
-      logout: () => set({ token: null, user: null }),
+      logout: () => {
+        set({ token: null, user: null });
+        try { localStorage.removeItem('kitehood-auth'); } catch {}
+      },
 
       login: async (email, password) => {
         const res = await fetch('/api/auth/login', {
@@ -65,23 +77,35 @@ export const useAuthStore = create<AuthState>()(
 
       applyTokenFromUrl: async () => {
         const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
         const err = params.get('error');
         if (err) throw new Error(err);
+        const token = params.get('token');
         if (!token) return false;
-        const res = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await parseJson(res);
-        if (res.ok && data.user) {
-          set({ token, user: data.user });
-        } else {
-          set({
-            token,
-            user: data.user || { id: 'oauth', email: '', username: 'user', role: 'user' },
+
+        // 1) Luu ngay tu JWT — KHONG doi me
+        let user = userFromJwt(token);
+        set({ token, user });
+        try {
+          window.history.replaceState({}, '', '/code');
+        } catch {}
+
+        // 2) me trong 3s — co thi cap nhat, khong thi bo
+        try {
+          const ctrl = new AbortController();
+          const t = setTimeout(() => ctrl.abort(), 3000);
+          const res = await fetch('/api/auth/me', {
+            headers: { Authorization: 'Bearer ' + token },
+            signal: ctrl.signal,
           });
+          clearTimeout(t);
+          const data = await parseJson(res);
+          if (data.user) {
+            user = data.user;
+            set({ token, user });
+          }
+        } catch {
+          /* bo qua — da co user tu JWT */
         }
-        window.history.replaceState({}, '', '/login');
         return true;
       },
     }),

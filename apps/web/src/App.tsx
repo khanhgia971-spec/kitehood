@@ -16,45 +16,29 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 function OAuthCatcher() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
   const applyTokenFromUrl = useAuthStore((s) => s.applyTokenFromUrl);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    if (!token) return;
-
+    if (!new URLSearchParams(window.location.search).get('token')) return;
+    let done = false;
+    const go = () => {
+      if (done) return;
+      done = true;
+      navigate('/code', { replace: true });
+    };
+    // timeout bat buoc 2s — khong treo man hinh
+    const force = setTimeout(go, 2000);
     (async () => {
       try {
-        if (typeof applyTokenFromUrl === 'function') {
-          const ok = await applyTokenFromUrl();
-          if (ok) {
-            navigate('/code', { replace: true });
-            return;
-          }
-        }
-        // fallback: luu token truc tiep
-        setAuth(token, {
-          id: 'oauth-user',
-          username: 'user',
-          email: '',
-          role: 'admin',
-        });
-        // thu /api/auth/me
-        try {
-          const res = await fetch('/api/auth/me', {
-            headers: { Authorization: 'Bearer ' + token },
-          });
-          const data = await res.json();
-          if (data.user) setAuth(token, data.user);
-        } catch {}
-        window.history.replaceState({}, '', '/code');
-        navigate('/code', { replace: true });
+        await applyTokenFromUrl();
       } catch (e) {
         console.error(e);
+      } finally {
+        clearTimeout(force);
+        go();
       }
     })();
-  }, [applyTokenFromUrl, setAuth, navigate]);
+  }, [applyTokenFromUrl, navigate]);
 
   return null;
 }
@@ -78,14 +62,7 @@ export default function App() {
         <Route path="/code/*" element={<IDELayout />} />
         <Route path="/ide" element={<Navigate to="/code" replace />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/admin/*"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
+        <Route path="/admin/*" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
