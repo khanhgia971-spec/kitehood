@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface AuthUser {
   id: string;
@@ -10,7 +10,7 @@ export interface AuthUser {
   [key: string]: unknown;
 }
 
-type S = {
+type AuthState = {
   token: string | null;
   user: AuthUser | null;
   setAuth: (token: string, user: AuthUser) => void;
@@ -23,20 +23,32 @@ type S = {
 
 async function parseJson(res: Response) {
   const text = await res.text();
-  try { return JSON.parse(text); }
-  catch { throw new Error(text.trimStart().startsWith("<") ? "API HTML" : text.slice(0, 80) || "Loi"); }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(
+      text.trimStart().startsWith('<')
+        ? 'API tra HTML — deploy Worker + hard refresh'
+        : text.slice(0, 120) || 'Loi mang'
+    );
+  }
 }
 
 function fromJwt(token: string): AuthUser {
   try {
-    const p = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return { id: String(p.sub || "u"), username: String(p.email || p.sub || "user"), email: String(p.email || ""), role: String(p.role || "user") };
+    const p = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return {
+      id: String(p.sub || 'u'),
+      username: String(p.email || p.sub || 'user'),
+      email: String(p.email || ''),
+      role: String(p.role || 'user'),
+    };
   } catch {
-    return { id: "u", username: "user", email: "", role: "user" };
+    return { id: 'u', username: 'user', email: '', role: 'user' };
   }
 }
 
-export const useAuthStore = create<S>()(
+export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       token: null,
@@ -44,31 +56,50 @@ export const useAuthStore = create<S>()(
       setAuth: (token, user) => set({ token, user }),
       logout: () => {
         set({ token: null, user: null });
-        try { localStorage.removeItem("kitehood-auth"); } catch {}
+        try {
+          localStorage.removeItem('kitehood-auth');
+        } catch {}
       },
       login: async (email, password) => {
-        const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
         const data = await parseJson(res);
-        if (!res.ok) throw new Error(data.error || "Sai email/mat khau");
+        if (!res.ok) throw new Error(data.error || 'Email hoac mat khau sai');
         set({ token: data.token, user: data.user });
       },
       register: async (email, password, name) => {
-        const res = await fetch("/api/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, username: name || email.split("@")[0] }) });
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            username: name || email.split('@')[0],
+          }),
+        });
         const data = await parseJson(res);
-        if (!res.ok) throw new Error(data.error || "Dang ky that bai");
+        if (!res.ok) throw new Error(data.error || 'Dang ky that bai');
         set({ token: data.token, user: data.user });
       },
       applyTokenFromUrl: async () => {
-        const q = new URLSearchParams(location.search);
-        if (q.get("error")) throw new Error(q.get("error") || "OAuth");
-        const token = q.get("token");
+        const q = new URLSearchParams(window.location.search);
+        if (q.get('error')) throw new Error(q.get('error') || 'OAuth');
+        const token = q.get('token');
         if (!token) return false;
         set({ token, user: fromJwt(token) });
-        try { history.replaceState({}, "", "/code"); } catch {}
+        try {
+          history.replaceState({}, '', '/code');
+        } catch {}
         try {
           const ac = new AbortController();
           setTimeout(() => ac.abort(), 2000);
-          const res = await fetch("/api/auth/me", { headers: { Authorization: "Bearer " + token }, signal: ac.signal });
+          const res = await fetch('/api/auth/me', {
+            headers: { Authorization: 'Bearer ' + token },
+            signal: ac.signal,
+          });
           const data = await parseJson(res);
           if (data.user) set({ token, user: data.user });
         } catch {}
@@ -76,17 +107,20 @@ export const useAuthStore = create<S>()(
       },
       updateProfile: async ({ username, avatarUrl }) => {
         const token = get().token;
-        if (!token) throw new Error("Chua dang nhap");
-        const res = await fetch("/api/auth/profile", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        if (!token) throw new Error('Chua dang nhap');
+        const res = await fetch('/api/auth/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token,
+          },
           body: JSON.stringify({ username, avatarUrl }),
         });
         const data = await parseJson(res);
-        if (!res.ok) throw new Error(data.error || "Loi cap nhat");
+        if (!res.ok) throw new Error(data.error || 'Cap nhat that bai');
         set({ user: data.user });
       },
     }),
-    { name: "kitehood-auth", partialize: (s) => ({ token: s.token, user: s.user }) }
+    { name: 'kitehood-auth', partialize: (s) => ({ token: s.token, user: s.user }) }
   )
 );

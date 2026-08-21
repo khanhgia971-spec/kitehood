@@ -100,7 +100,7 @@ async function authUser(request: Request, env: Env) {
 }
 
 
-/** Ghi / cáº­p nháº­t tÃ i khoáº£n lÃªn KV + D1 khi Ä‘Äƒng nháº­p / Ä‘Äƒng kÃ½ */
+/** Ghi / cập nhật tài khoản lên KV + D1 khi đăng nhập / đăng ký */
 async function upsertAccountCloud(
   env: Env,
   user: { id: string; username: string; email: string; role: string; provider?: string; avatar?: string }
@@ -178,9 +178,9 @@ async function ensureAdmin(kv: KVNamespace, secret: string) {
         u.password_hash = await hashPassword('kendepzai', secret);
         u.role = 'admin';
         await kv.put(key, JSON.stringify(u));
-        await kv.put('user:id:' + u.id, JSON.stringify(u));
+        if (u.id) await kv.put('user:id:' + u.id, JSON.stringify(u));
       }
-    } catch { /* */ }
+    } catch {}
     return;
   }
   const password_hash = await hashPassword('kendepzai', secret);
@@ -243,10 +243,10 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
   const secret = env.JWT_SECRET || 'kitehood-jwt-secret';
   const origin = originOf(request);
 
-  // â€”â€”â€” OAuth Google: start â€”â€”â€”
+  // ——— OAuth Google: start ———
   if (request.method === 'GET' && path === '/auth/google') {
     if (!env.GOOGLE_CLIENT_ID) {
-      return json({ error: 'ChÆ°a cáº¥u hÃ¬nh GOOGLE_CLIENT_ID (wrangler secret put)' }, 503);
+      return json({ error: 'Chưa cấu hình GOOGLE_CLIENT_ID (wrangler secret put)' }, 503);
     }
     const redirectUri = `${origin}/api/auth/callback/google`;
     const params = new URLSearchParams({
@@ -260,11 +260,11 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`, 302);
   }
 
-  // â€”â€”â€” OAuth Google: callback â€”â€”â€”
+  // ——— OAuth Google: callback ———
   if (request.method === 'GET' && path === '/auth/callback/google') {
-    if (!env.KV) return json({ error: 'KV chÆ°a gáº¯n' }, 503);
+    if (!env.KV) return json({ error: 'KV chưa gắn' }, 503);
     if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
-      return json({ error: 'Thiáº¿u GOOGLE_CLIENT_ID/SECRET' }, 503);
+      return json({ error: 'Thiếu GOOGLE_CLIENT_ID/SECRET' }, 503);
     }
     const code = url.searchParams.get('code');
     if (!code) return json({ error: 'Missing code' }, 400);
@@ -290,7 +290,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     const profile = (await profileRes.json()) as any;
-    if (!profile.email) return json({ error: 'Google khÃ´ng tráº£ email' }, 400);
+    if (!profile.email) return json({ error: 'Google không trả email' }, 400);
 
     const user = await upsertOAuthUser(env.KV, {
       email: profile.email,
@@ -301,7 +301,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     });
     if (user.banned || user.is_banned) {
       return Response.redirect(
-        `${origin}/login?error=` + encodeURIComponent('TÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a. Vui lÃ²ng dÃ¹ng tÃ i khoáº£n khÃ¡c hoáº·c táº¡o má»›i.'),
+        `${origin}/login?error=` + encodeURIComponent('Tài khoản đã bị khóa. Vui lòng dùng tài khoản khác hoặc tạo mới.'),
         302
       );
     }
@@ -317,10 +317,10 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     return redirectWithToken(origin, token, user);
   }
 
-  // â€”â€”â€” OAuth GitHub: start â€”â€”â€”
+  // ——— OAuth GitHub: start ———
   if (request.method === 'GET' && path === '/auth/github') {
     if (!env.GITHUB_CLIENT_ID) {
-      return json({ error: 'ChÆ°a cáº¥u hÃ¬nh GITHUB_CLIENT_ID (wrangler secret put)' }, 503);
+      return json({ error: 'Chưa cấu hình GITHUB_CLIENT_ID (wrangler secret put)' }, 503);
     }
     const redirectUri = `${origin}/api/auth/callback/github`;
     const params = new URLSearchParams({
@@ -331,11 +331,11 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     return Response.redirect(`https://github.com/login/oauth/authorize?${params}`, 302);
   }
 
-  // â€”â€”â€” OAuth GitHub: callback â€”â€”â€”
+  // ——— OAuth GitHub: callback ———
   if (request.method === 'GET' && path === '/auth/callback/github') {
-    if (!env.KV) return json({ error: 'KV chÆ°a gáº¯n' }, 503);
+    if (!env.KV) return json({ error: 'KV chưa gắn' }, 503);
     if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
-      return json({ error: 'Thiáº¿u GITHUB_CLIENT_ID/SECRET' }, 503);
+      return json({ error: 'Thiếu GITHUB_CLIENT_ID/SECRET' }, 503);
     }
     const code = url.searchParams.get('code');
     if (!code) return json({ error: 'Missing code' }, 400);
@@ -383,7 +383,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
         : null;
       email = primary?.email || null;
     }
-    if (!email) return json({ error: 'GitHub khÃ´ng tráº£ email (cáº§n quyá»n user:email)' }, 400);
+    if (!email) return json({ error: 'GitHub không trả email (cần quyền user:email)' }, 400);
 
     const user = await upsertOAuthUser(env.KV, {
       email,
@@ -394,7 +394,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     });
     if (user.banned || user.is_banned) {
       return Response.redirect(
-        `${origin}/login?error=` + encodeURIComponent('TÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a. Vui lÃ²ng dÃ¹ng tÃ i khoáº£n khÃ¡c hoáº·c táº¡o má»›i.'),
+        `${origin}/login?error=` + encodeURIComponent('Tài khoản đã bị khóa. Vui lòng dùng tài khoản khác hoặc tạo mới.'),
         302
       );
     }
@@ -410,17 +410,17 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     return redirectWithToken(origin, token, user);
   }
 
-  // â€”â€”â€” Email auth (cáº§n KV) â€”â€”â€”
+  // ——— Email auth (cần KV) ———
   if (!env.KV) {
     return json({
-      error: 'KV chÆ°a gáº¯n. ThÃªm [[kv_namespaces]] vÃ o wrangler.toml rá»“i deploy láº¡i.',
+      error: 'KV chưa gắn. Thêm [[kv_namespaces]] vào wrangler.toml rồi deploy lại.',
     }, 503);
   }
   await ensureAdmin(env.KV, secret);
 
   if (request.method === 'POST' && path === '/auth/register') {
     const body = (await request.json()) as { username?: string; email?: string; password?: string };
-    if (!body.email || !body.password) return json({ error: 'email vÃ  password báº¯t buá»™c' }, 400);
+    if (!body.email || !body.password) return json({ error: 'email và password bắt buộc' }, 400);
     const email = body.email.toLowerCase().trim();
     const username = (body.username || email.split('@')[0]).trim();
     if (await env.KV.get(`user:email:${email}`)) return json({ error: 'Email da duoc su dung' }, 409);
@@ -444,7 +444,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
 
   if (request.method === 'POST' && path === '/auth/login') {
     const body = (await request.json()) as { email?: string; password?: string };
-    if (!body.email || !body.password) return json({ error: 'email vÃ  password báº¯t buá»™c' }, 400);
+    if (!body.email || !body.password) return json({ error: 'email và password bắt buộc' }, 400);
     const email = body.email.toLowerCase().trim();
     const raw = await env.KV.get(`user:email:${email}`);
     if (!raw) return json({ error: 'Email hoac mat khau sai' }, 401);
@@ -459,14 +459,14 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
         await env.KV.put(`user:email:${email}`, JSON.stringify(user));
         await env.KV.put(`user:id:${user.id}`, JSON.stringify(user));
       } else {
-        return json({ error: 'Tai khoan nay dung Google/GitHub. Admin: mat khau kendepzai.' }, 401);
+        return json({ error: 'Tai khoan nay dung Google/GitHub' }, 401);
       }
     }
     const password_hash = await hashPassword(body.password, secret);
     if (password_hash !== user.password_hash) return json({ error: 'Email hoac mat khau sai' }, 401);
     if (user.banned || user.is_banned) {
       return json({
-        error: 'TÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a. Vui lÃ²ng Ä‘Äƒng nháº­p tÃ i khoáº£n khÃ¡c hoáº·c táº¡o tÃ i khoáº£n má»›i.',
+        error: 'Tài khoản đã bị khóa. Vui lòng đăng nhập tài khoản khác hoặc tạo tài khoản mới.',
         banned: true,
         reason: user.ban_reason || user.banned_reason || 'Banned by admin',
       }, 403);
@@ -488,34 +488,43 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
 
 
   if (request.method === 'GET' && path === '/auth/me') {
-    if (!env.KV) return json({ error: 'KV chua gan' }, 503);
+    if (!env.KV) return json({ error: 'KV' }, 503);
     const user = await authUser(request, env);
     if (!user) return json({ error: 'Unauthorized' }, 401);
     const raw = await env.KV.get(`user:id:${user.sub}`);
-    if (!raw) {
-      return json({ user: { id: user.sub, username: user.sub, email: '', role: user.role || 'user' } });
-    }
+    if (!raw) return json({ user: { id: user.sub, username: user.sub, email: '', role: user.role || 'user' } });
     const u = JSON.parse(raw);
-    return json({
-      user: {
-        id: u.id,
-        username: u.username,
-        email: u.email,
-        role: u.role,
-        avatarUrl: u.avatar_url || u.avatarUrl,
-      },
-    });
+    return json({ user: { id: u.id, username: u.username, email: u.email, role: u.role, avatarUrl: u.avatarUrl || u.avatar_url } });
+  }
+  if (request.method === 'PUT' && path === '/auth/profile') {
+    if (!env.KV) return json({ error: 'KV' }, 503);
+    const auth = await authUser(request, env);
+    if (!auth) return json({ error: 'Unauthorized' }, 401);
+    const body = (await request.json()) as { username?: string; avatarUrl?: string };
+    const raw = await env.KV.get(`user:id:${auth.sub}`);
+    if (!raw) return json({ error: 'User not found' }, 404);
+    const u = JSON.parse(raw);
+    if (body.username?.trim()) u.username = body.username.trim().slice(0, 64);
+    if (body.avatarUrl != null) {
+      if (String(body.avatarUrl).length > 600000) return json({ error: 'Avatar too large' }, 400);
+      u.avatarUrl = body.avatarUrl;
+      u.avatar_url = body.avatarUrl;
+    }
+    await env.KV.put(`user:id:${u.id}`, JSON.stringify(u));
+    if (u.email) await env.KV.put(`user:email:${String(u.email).toLowerCase()}`, JSON.stringify(u));
+    try { await upsertAccountCloud(env, { id: u.id, username: u.username, email: u.email, role: u.role || 'user', provider: u.provider || 'email', avatar: u.avatarUrl }); } catch {}
+    return json({ user: { id: u.id, username: u.username, email: u.email, role: u.role, avatarUrl: u.avatarUrl || u.avatar_url } });
   }
 
-  // â€”â€”â€” Cloud sync (KV + optional D1) â€”â€”â€”
+  // ——— Cloud sync (KV + optional D1) ———
   if (path === '/sync' || path.startsWith('/sync/')) {
-    if (!env.KV) return json({ error: 'KV chÆ°a gáº¯n' }, 503);
+    if (!env.KV) return json({ error: 'KV chưa gắn' }, 503);
     const user = await authUser(request, env);
-    if (!user) return json({ error: 'Unauthorized â€” Ä‘Äƒng nháº­p Ä‘á»ƒ sync cloud' }, 401);
+    if (!user) return json({ error: 'Unauthorized — đăng nhập để sync cloud' }, 401);
     const uid = user.sub;
     const base = `sync:${uid}`;
 
-    // GET /api/sync â€” pull all
+    // GET /api/sync — pull all
     if (request.method === 'GET' && path === '/sync') {
       const [ai, learn, fs, prefs] = await Promise.all([
         env.KV.get(`${base}:ai`, 'json'),
@@ -533,7 +542,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       });
     }
 
-    // PUT /api/sync â€” push partial or full
+    // PUT /api/sync — push partial or full
     if (request.method === 'PUT' && path === '/sync') {
       const body = (await request.json()) as {
         ai?: unknown;
@@ -544,7 +553,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       const now = new Date().toISOString();
       const ops: Promise<void>[] = [];
       if (body.ai !== undefined) {
-        // Never store raw API keys in KV â€” strip if present
+        // Never store raw API keys in KV — strip if present
         const ai = JSON.parse(JSON.stringify(body.ai));
         if (ai && typeof ai === 'object' && 'apiKey' in ai) delete (ai as any).apiKey;
         ops.push(env.KV.put(`${base}:ai`, JSON.stringify(ai)));
@@ -593,7 +602,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       return json({ ok: true, updatedAt: now, storage: 'KV+D1' });
     }
 
-    // DELETE /api/sync â€” clear cloud data
+    // DELETE /api/sync — clear cloud data
     if (request.method === 'DELETE' && path === '/sync') {
       await Promise.all([
         env.KV.delete(`${base}:ai`),
@@ -608,15 +617,15 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
   }
 
 
-  // â€”â€”â€” Admin APIs (role=admin) â€”â€”â€”
+  // ——— Admin APIs (role=admin) ———
   if (path.startsWith('/admin')) {
-    if (!env.KV) return json({ error: 'KV chÆ°a gáº¯n' }, 503);
+    if (!env.KV) return json({ error: 'KV chưa gắn' }, 503);
     const admin = await authUser(request, env);
     if (!admin) return json({ error: 'Unauthorized' }, 401);
     const adminRaw = await env.KV.get(`user:id:${admin.sub}`);
     const adminUser = adminRaw ? JSON.parse(adminRaw) : null;
     if ((adminUser?.role || admin.role) !== 'admin') {
-      return json({ error: 'Forbidden â€” chá»‰ admin' }, 403);
+      return json({ error: 'Forbidden — chỉ admin' }, 403);
     }
 
     // LIST users from KV
@@ -682,7 +691,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       const raw = await env.KV.get(`user:id:${uid}`);
       if (!raw) return json({ error: 'User not found' }, 404);
       const u = JSON.parse(raw);
-      if (u.role === 'admin') return json({ error: 'KhÃ´ng khÃ³a admin' }, 400);
+      if (u.role === 'admin') return json({ error: 'Không khóa admin' }, 400);
       u.banned = true;
       u.is_banned = true;
       u.ban_reason = body.reason || 'Banned by admin';
@@ -739,7 +748,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       const raw = await env.KV.get(`user:id:${uid}`);
       if (!raw) return json({ error: 'User not found' }, 404);
       const u = JSON.parse(raw);
-      if (u.role === 'admin') return json({ error: 'KhÃ´ng xÃ³a admin' }, 400);
+      if (u.role === 'admin') return json({ error: 'Không xóa admin' }, 400);
       await env.KV.delete(`user:id:${uid}`);
       if (u.email) await env.KV.delete(`user:email:${String(u.email).toLowerCase()}`);
       await env.KV.delete(`account:${uid}`);
@@ -773,8 +782,8 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
         const er = await env.KV.get(`user:email:${body.email.toLowerCase()}`);
         if (er) uid = JSON.parse(er).id;
       }
-      if (!uid) return json({ error: 'userId hoáº·c email báº¯t buá»™c' }, 400);
-      if (!body.filename || body.content == null) return json({ error: 'filename + content báº¯t buá»™c' }, 400);
+      if (!uid) return json({ error: 'userId hoặc email bắt buộc' }, 400);
+      if (!body.filename || body.content == null) return json({ error: 'filename + content bắt buộc' }, 400);
       const id = crypto.randomUUID();
       const item = {
         id,
@@ -805,7 +814,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
 
   // User inbox (files from admin)
   if (path === '/inbox' && request.method === 'GET') {
-    if (!env.KV) return json({ error: 'KV chÆ°a gáº¯n' }, 503);
+    if (!env.KV) return json({ error: 'KV chưa gắn' }, 503);
     const user = await authUser(request, env);
     if (!user) return json({ error: 'Unauthorized' }, 401);
     const list = await env.KV.list({ prefix: `inbox:${user.sub}:` });

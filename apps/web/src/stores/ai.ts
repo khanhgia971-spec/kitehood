@@ -465,7 +465,13 @@ export async function callAIChat(
     headers['X-Title'] = 'KiteHood AI Agent';
   }
 
-  let url = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
+  const base = (baseUrl || '').trim().replace(/\/$/, '');
+  if (!/^https?:\/\//i.test(base)) {
+    throw new Error(
+      'Base URL AI sai (phai la https://...). Vi du: https://api.openai.com/v1 hoac https://openrouter.ai/api/v1 — khong de trong hoac domain kitehood.'
+    );
+  }
+  let url = `${base}/chat/completions`;
   // Google AI Studio OpenAI-compat sometimes needs key query
   if (provider === 'google' && /^AIza/i.test(apiKey)) {
     // Bearer works on openai-compat endpoint; keep both
@@ -520,7 +526,11 @@ export async function callAIChatStream(
     headers['X-Title'] = 'KiteHood AI Agent';
   }
 
-  const url = `${baseUrl.replace(/\/$/, '')}/chat/completions`;
+  const baseS = (baseUrl || '').trim().replace(/\/$/, '');
+  if (!/^https?:\/\//i.test(baseS)) {
+    throw new Error('Base URL AI sai — can https://...');
+  }
+  const url = `${baseS}/chat/completions`;
   const res = await fetch(url, {
     method: 'POST',
     headers,
