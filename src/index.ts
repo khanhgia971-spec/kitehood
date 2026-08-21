@@ -630,27 +630,55 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
 
     // LIST users from KV
     async function listUsersFromKV() {
+      const map = new Map<string, any>();
+      // 1) KV
       const list = await env.KV!.list({ prefix: 'user:id:' });
-      const users = [];
       for (const k of list.keys) {
         const raw = await env.KV!.get(k.name);
         if (!raw) continue;
         try {
           const u = JSON.parse(raw);
-          users.push({
+          map.set(u.id, {
             id: u.id,
             username: u.username,
             email: u.email,
             role: u.role || 'user',
             provider: u.provider,
+            avatarUrl: u.avatarUrl || u.avatar_url || null,
             banned: !!(u.banned || u.is_banned),
             ban_reason: u.ban_reason || u.banned_reason || null,
             created_at: u.created_at,
             last_login_at: u.last_login_at,
+            source: 'KV',
           });
         } catch { /* */ }
       }
-      return users;
+      // 2) D1 accounts (admin thay duoc ke ca khi KV miss)
+      if (env.DB) {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS accounts (
+            id TEXT PRIMARY KEY, username TEXT, email TEXT, role TEXT, provider TEXT,
+            avatar_url TEXT, last_login_at TEXT, updated_at TEXT
+          )`).run();
+          const { results } = await env.DB.prepare(`SELECT * FROM accounts ORDER BY last_login_at DESC LIMIT 500`).all();
+          for (const r of results || []) {
+            const id = String((r as any).id);
+            const prev = map.get(id) || {};
+            map.set(id, {
+              ...prev,
+              id,
+              username: (r as any).username || prev.username,
+              email: (r as any).email || prev.email,
+              role: (r as any).role || prev.role || 'user',
+              provider: (r as any).provider || prev.provider,
+              avatarUrl: (r as any).avatar_url || prev.avatarUrl || null,
+              last_login_at: (r as any).last_login_at || prev.last_login_at,
+              source: prev.source ? prev.source + '+D1' : 'D1',
+            });
+          }
+        } catch { /* */ }
+      }
+      return Array.from(map.values());
     }
 
     if (request.method === 'GET' && path === '/admin/stats') {

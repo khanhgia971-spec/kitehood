@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useAuthStore } from '../../stores/auth';
 import {
   setKeyboardSoundEnabled,
   setKeyboardVolume as setKbVolLib,
@@ -13,6 +15,13 @@ const THEMES: { id: ThemeId; label: string }[] = [
 ];
 
 export function PrefsPanel() {
+
+  const authUser = useAuthStore((s) => s.user);
+  const updateProfile = useAuthStore((s) => s.updateProfile);
+  const logout = useAuthStore((s) => s.logout);
+  const [profName, setProfName] = useState(authUser?.username || '');
+  const [profAvatar, setProfAvatar] = useState(authUser?.avatarUrl || '');
+  const [profMsg, setProfMsg] = useState('');
   const {
     theme,
     fontSize,
@@ -40,7 +49,62 @@ export function PrefsPanel() {
   } = usePrefsStore();
 
   return (
-    <div className="p-4 space-y-5 max-w-xl text-[13px]">
+    
+      {authUser && (
+        <section className="mb-6 p-3 rounded-xl border border-white/10 bg-white/5">
+          <h3 className="text-sm font-semibold mb-2">Ho so (luu D1 — admin thay)</h3>
+          <div className="flex items-center gap-3 mb-2">
+            <label className="w-12 h-12 rounded-full overflow-hidden bg-black/40 border border-white/20 cursor-pointer shrink-0">
+              {profAvatar ? (
+                <img src={String(profAvatar)} className="w-full h-full object-cover" alt="" />
+              ) : (
+                <span className="flex h-full items-center justify-center font-bold">
+                  {(authUser.username || '?')[0]}
+                </span>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f || f.size > 400000) {
+                    setProfMsg('Anh max 400KB');
+                    return;
+                  }
+                  const r = new FileReader();
+                  r.onload = () => setProfAvatar(String(r.result || ''));
+                  r.readAsDataURL(f);
+                }}
+              />
+            </label>
+            <div className="text-xs text-slate-400 truncate">{authUser.email}</div>
+          </div>
+          <input
+            className="w-full mb-2 px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-sm"
+            value={profName}
+            onChange={(e) => setProfName(e.target.value)}
+            placeholder="Ten hien thi"
+          />
+          <button
+            type="button"
+            className="w-full py-1.5 rounded-lg bg-indigo-500 text-sm font-semibold"
+            onClick={async () => {
+              try {
+                await updateProfile({ username: profName || authUser.username, avatarUrl: profAvatar || undefined });
+                setProfMsg('Da luu KV + D1');
+              } catch (ex: any) {
+                setProfMsg(ex?.message || 'Loi');
+              }
+            }}
+          >
+            Luu ten / avatar
+          </button>
+          {profMsg && <p className="text-xs mt-1 text-emerald-400">{profMsg}</p>}
+        </section>
+      )}
+
+<div className="p-4 space-y-5 max-w-xl text-[13px]">
       <div>
         <h2 className="text-base font-semibold mb-0.5 flex items-center gap-2">
           <Monitor size={16} className="text-[var(--accent)]" /> Giao diện
